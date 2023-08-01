@@ -27,13 +27,20 @@ export APP_NAME="$REPO-service-app"
 
 # Create the App Registration and service principle
 az ad app create --display-name $APP_NAME
-app_obj_id=$(az ad app list --display-name $APP_NAME --query [].id --output tsv)
-az ad sp create --id $app_obj_id
-spn_app_id=$(az ad sp list --display-name $APP_NAME --query [0].appId  --output tsv)
-echo "app_obj_id:$app_obj_id spn_app_id:$spn_app_id"
+appreg_obj_id=$(az ad app list --display-name $APP_NAME --query [].id --output tsv)
+appreg_app_id=$(az ad app list --display-name $APP_NAME --query [].appId --output tsv)
+
+echo "App Registration"
+echo "appreg_obj_id:$appreg_obj_id appreg_app_id:$appreg_app_id"
+
+az ad sp create --id $appreg_app_id
+spn_obj_id=$(az ad sp list --display-name $APP_NAME --query [].id  --output tsv)
+
+echo "Service Principle"
+echo "spn_obj_id:$spn_obj_id"
 
 # Give the App Registration Contributor access to the suscription
-az role assignment create --role contributor --subscription  $AZURE_SUBSCRIPTION_ID --assignee-object-id  $spn_app_id --assignee-principal-type ServicePrincipal --scope /subscriptions/$AZURE_SUBSCRIPTION_ID
+az role assignment create --role contributor --subscription  $AZURE_SUBSCRIPTION_ID --assignee-object-id  $spn_obj_id --assignee-principal-type ServicePrincipal --scope /subscriptions/$AZURE_SUBSCRIPTION_ID
 
 # Setup Federated Credential for each environment
 for dir in ../.azure/*/    # list directories in the form "/tmp/dirname/"
@@ -42,7 +49,7 @@ do
     export env="${dir##*/}"     # everything after the final "/"
     echo $env
 
-     az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$app_obj_id/federatedIdentityCredentials" \
+     az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$appreg_obj_id/federatedIdentityCredentials" \
     --body "{\"name\":\"$APP_NAME-deploy-$env\",
         \"issuer\":\"https://token.actions.githubusercontent.com\",
         \"subject\":\"repo:$PRODUCT_ORG/$REPO:environment:$env\"
@@ -53,9 +60,9 @@ done
 
 echo "##################################################################################################"
 echo
-echo "Update Git Action variablea in"
+echo "Update Deployment variables"
 echo
-echo "AZURE-CLIENT_ID:$app_obj_id"
+echo "AZURE-CLIENT_ID:$appreg_app_id"
 echo "AZURE_SUBSCRIPTION_ID:$AZURE_SUBSCRIPTION_ID"
 echo "AZURE_TENANT_ID:$AZURE_TENANT_ID"
 echo
