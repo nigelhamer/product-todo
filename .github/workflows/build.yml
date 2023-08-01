@@ -1,0 +1,72 @@
+name: Build and Test
+
+on:
+  # support calling this workflow from other workflows
+  # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#creating-a-reusable-workflow
+  workflow_call:
+  # support running this workflow on push events
+  # We want this step to run all on branches expect main and INFRA-TEST where it will be run by pipeline.yml in order to cover deployments
+  # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
+  push:
+    branches-ignore: 
+        - main
+        - infra/*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/azure-dev-cli-apps:latest
+
+    steps:
+  
+      - name: Checkout
+        uses: actions/checkout@v3.5.2
+
+      - name: Api Functions - Install dependencies 
+        run: |
+          cd src/api
+          dotnet restore 
+      
+      - name: Api Functions - Build
+        run: |
+          cd src/api
+          dotnet build --configuration Release --no-restore 
+    
+      - name: ContractImport Functions - Test
+        run: |
+          cd src/api
+          dotnet test --no-restore --verbosity normal
+
+      - name: Create and upload the deployment package
+        # Only package if we are on main or INFRA-TEST branches. They are the only branches that can deploy
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/infra/*'
+        run: |
+          mkdir deploy
+          cp -r ./.azure ./deploy/.azure
+          cp -r ./infra ./deploy/infra
+          cp -r ./src ./deploy/src
+          cp ./azure.yaml ./deploy/azure.yaml
+          rm -rf ./deploy/src/api/bin/Debug
+
+    # upload the artifact for use in either CD
+      # here, the 'dist' directory is compressed and uploaded to GitHub asset storage as 'build-artifact'
+      - name: Upload artifact
+        # https://github.com/actions/upload-artifact
+        # Only package if we are on main or INFRA-TEST branches. They are the only branches that can deploy
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/infra/*'
+        uses: actions/upload-artifact@v3
+        with:
+          # the name to save the compressed asset as
+          name: build-artifact
+          # the directory or file to upload. adapt to your needs
+          path: deploy
+          # the artifact is only needed for the duration of the build-deploy workflow
+          # adapt to your needs
+          # https://github.com/actions/upload-artifact#retention-period
+          retention-days: 1
+
+
+
+
+      

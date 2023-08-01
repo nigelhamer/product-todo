@@ -1,0 +1,104 @@
+name: Deploy to DEV
+
+on:
+  # support calling this workflow from other workflows
+  # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#creating-a-reusable-workflow
+  workflow_call:
+  # support running this workflow on push events
+  # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
+  push:
+    branches-ignore: 
+        - '**'
+
+# https://bishenderson.atlassian.net/wiki/spaces/MFS/pages/4718644/Deployment+Security
+permissions:
+  id-token: write
+  contents: read
+  
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: 
+      name: DEV
+    container:
+      image: mcr.microsoft.com/azure-dev-cli-apps:latest
+    env:
+      # Terraform Environment variables
+      #TF_LOG: INFO
+
+      ######
+      ###### Deliberately left commented to allow the switch back to client credentials if required
+      ######
+      #AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+     # Required for terraform to pick up service principle auth
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+
+    steps:
+
+      - name: Download the deployment package
+        uses: actions/download-artifact@v3
+        with:
+         name: build-artifact
+
+      # Need to do both. Login to Azure CLI means the context is set up correctly for AZD. Then do an AZD auth
+      - name: Log in with AZ CLI (Federated Credentials)
+        uses: azure/login@v1
+        with:
+            client-id: ${{ vars.AZURE_CLIENT_ID }}
+            tenant-id: ${{ vars.AZURE_TENANT_ID }}
+            subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in with AZD (Federated Credentials)
+        run: |
+          azd auth login `
+            --client-id "${{ vars.AZURE_CLIENT_ID }}" `
+            --federated-credential-provider "github" `
+            --tenant-id "${{ vars.AZURE_TENANT_ID }}"
+        shell: pwsh
+
+      ######
+      ###### Deliberately left commented to allow the switch back to client credentials if required
+      ######
+
+      # - name: Log in Azure CLI with Azure (Client Credentials)
+      #   run: |
+      #     $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
+      #     Write-Host "::add-mask::$($info.clientSecret)"
+
+      #     az login `
+      #       --service-principal -u "$($info.clientId)" -p "$($info.clientSecret)" `
+      #       --tenant "$($info.tenantId)" 
+      #   shell: pwsh
+
+      # - name: Log in AZD with Azure (Client Credentials)
+      #   run: |
+      #     $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
+      #     Write-Host "::add-mask::$($info.clientSecret)"
+
+      #     azd auth login `
+      #       --client-id "$($info.clientId)" `
+      #       --client-secret "$($info.clientSecret)" `
+      #       --tenant-id "$($info.tenantId)"
+      #   shell: pwsh
+
+      - name: AZD - Switch Env if in the Infra branch
+        run: |         
+          if [ ${{ github.ref }} == 'refs/heads/infra/*' ]; then
+            azd env select infra
+          else
+            azd env select ${{ vars.AZURE_ENV_NAME }}
+          fi
+        shell: bash
+          
+      - name: AZD - Set Configuration
+        run: |         
+          azd config set alpha.terraform on  
+          azd env list
+
+      - name: AZD - Provision
+        run: |
+          azd provision --no-prompt
+
+      - name: AZD - Deploy
+        run: azd deploy --no-prompt
