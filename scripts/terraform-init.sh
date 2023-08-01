@@ -1,6 +1,6 @@
 #!/bin/bash
-# remember to run chmod +x ./terraform-plan.sh
-# to run: ./terraform-plan.sh
+# remember to run chmod +x ./terraform-init.sh
+# to run: ./terraform-init.sh
 # Set to infra by default. Switch to dev if required.
 export AZURE_ENV_NAME=infra
 

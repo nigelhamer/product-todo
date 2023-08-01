@@ -1,6 +1,6 @@
 #!/bin/bash
-# remember to run chmod +x provision-service-terraform-state.sh
-# to run: ./provision-service-terraform-state.sh
+# remember to run chmod +x provision-terraform-backend.sh
+# to run: ./provision-terraform-backend.sh
 # Set to infra by default. Switch to dev if required.
 export AZURE_ENV_NAME=infra
 

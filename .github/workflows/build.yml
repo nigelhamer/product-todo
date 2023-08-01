@@ -33,7 +33,7 @@ jobs:
           cd src/api
           dotnet build --configuration Release --no-restore 
     
-      - name: ContractImport Functions - Test
+      - name: Api Functions - Test
         run: |
           cd src/api
           dotnet test --no-restore --verbosity normal
