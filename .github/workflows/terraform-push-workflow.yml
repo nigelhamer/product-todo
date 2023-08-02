@@ -149,7 +149,8 @@ jobs:
 
       # Use the output in other steps
       - name: Use Constant Output
-        run: echo "The constant value is: $MY_ENV_VARIABLE"
+        run: |
+            echo "The constant value is: $MY_ENV_VARIABLE"
 
       # If the plan failed for any reason exit the workflow
       - name: Terraform Plan Status
