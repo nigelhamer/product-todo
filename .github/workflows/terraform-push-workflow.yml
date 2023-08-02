@@ -37,11 +37,10 @@ jobs:
 
       # Load the right AZD env configuration
       - name: AZD env configuration
-        run:
-            azd env select infra
-            source .azure/infra/.env
-            echo ${RS_STORAGE_ACCOUNT}
-    
+        run: |
+          azd env select infra
+          source .azure/infra/.env
+          echo ${RS_STORAGE_ACCOUNT}
           
       # Check the fomatting of .tf. files
       - name: Terraform Format
@@ -55,13 +54,13 @@ jobs:
         working-directory: ./infra
         run: 
               echo ${RS_STORAGE_ACCOUNT}
-              terraform init
-                -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" \
-                -backend-config="container_name=$RS_CONTAINER_NAME" \
-                -backend-config="key=${SERVICE_NAME}/${AZURE_ENV_NAME}.tfstate" \
-                -backend-config="resource_group_name=$RS_RESOURCE_GROUP" \
-                -backend-config="subscription_id=$AZURE_SUBSCRIPTION_ID" \
-                -backend-config="tenant_id=$AZURE_TENANT_ID" \
+              terraform init `
+                -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" `
+                -backend-config="container_name=$RS_CONTAINER_NAME" `
+                -backend-config="key=${SERVICE_NAME}/${AZURE_ENV_NAME}.tfstate" `
+                -backend-config="resource_group_name=$RS_RESOURCE_GROUP" `
+                -backend-config="subscription_id=$AZURE_SUBSCRIPTION_ID" `
+                -backend-config="tenant_id=$AZURE_TENANT_ID" `
                 -backend-config="use_oidc=true" 
 
       # Validate terraform files syntax
@@ -83,12 +82,12 @@ jobs:
         id: tf-plan
         working-directory: ./infra
         run: 
-            terraform plan \
-                -var="environment_name=$AZURE_ENV_NAME" \
-                -var="location=$AZURE_LOCATION" \
-                -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
-                -var="product_name=$PRODUCT_NAME" \
-                -var="product_prefix=$PRODUCT_PREFIX" \
+            terraform plan `
+                -var="environment_name=$AZURE_ENV_NAME" `
+                -var="location=$AZURE_LOCATION" `
+                -var="principal_id=550e8400-e29b-41d4-a716-446655440000" `
+                -var="product_name=$PRODUCT_NAME" `
+                -var="product_prefix=$PRODUCT_PREFIX" `
                 -var="product_service_name=$PRODUCT_SERVICE_NAME" 
         continue-on-error: true
 
