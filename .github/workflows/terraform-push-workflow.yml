@@ -73,15 +73,13 @@ jobs:
         id: tf-init
         working-directory: ./infra
         run: |
-              echo ${AZURE_TENANT_ID}
-              echo ${ARM_TENANT_ID}
               terraform init \
-                -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" \
-                -backend-config="container_name=$RS_CONTAINER_NAME" \
-                -backend-config="key=${SERVICE_NAME}/${AZURE_ENV_NAME}.tfstate" \
-                -backend-config="resource_group_name=$RS_RESOURCE_GROUP" \
-                -backend-config="subscription_id=$AZURE_SUBSCRIPTION_ID" \
-                -backend-config="tenant_id=$AZURE_TENANT_ID" \
+                -backend-config="storage_account_name=${{env.RS_STORAGE_ACCOUNT}}" \
+                -backend-config="container_name=${{env.RS_CONTAINER_NAME}}" \
+                -backend-config="key=${{env.PRODUCT_SERVICE_NAME}}/${{env.AZURE_ENV_NAME}}.tfstate" \
+                -backend-config="resource_group_name=${{env.RS_RESOURCE_GROUP}}" \
+                -backend-config="subscription_id=${{env.AZURE_SUBSCRIPTION_ID}}" \
+                -backend-config="tenant_id=${{env.AZURE_TENANT_ID}}" \
                 -backend-config="use_oidc=true" 
 
       # Validate terraform files syntax
@@ -104,12 +102,12 @@ jobs:
         working-directory: ./infra
         run: |
             terraform plan \
-                -var="environment_name=$AZURE_ENV_NAME" \
-                -var="location=$AZURE_LOCATION" \
+                -var="environment_name=${{env.AZURE_ENV_NAME}}" \
+                -var="location=${{env.AZURE_LOCATION}}" \
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
-                -var="product_name=$PRODUCT_NAME" \
-                -var="product_prefix=$PRODUCT_PREFIX" \
-                -var="product_service_name=$PRODUCT_SERVICE_NAME" 
+                -var="product_name=${{env.PRODUCT_NAME}}" \
+                -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
+                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" 
         continue-on-error: true
 
       - uses: actions/github-script@v6
