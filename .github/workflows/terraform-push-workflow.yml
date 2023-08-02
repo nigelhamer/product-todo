@@ -51,7 +51,7 @@ jobs:
       - name: AZD env configuration
         run: |
           azd env select infra
-          echo source <(azd env get-values --no-prompt) >> $GITHUB_ENV
+          echo (azd env get-values --no-prompt) >> $GITHUB_ENV
           echo ${RS_STORAGE_ACCOUNT}
           
       # Check the fomatting of .tf. files
