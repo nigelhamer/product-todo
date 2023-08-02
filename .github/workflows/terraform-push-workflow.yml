@@ -22,7 +22,13 @@ jobs:
     environment: DEV
     container:
         image: mcr.microsoft.com/azure-dev-cli-apps:latest
+    env:
+      # Terraform Environment variables
+      #TF_LOG: INFO
 
+      # Required for terraform to pick up service principle auth
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
@@ -47,6 +53,14 @@ jobs:
         id: tf-fmt
         working-directory: ./infra
         run: terraform fmt -check
+
+      # Log into Azure - Terrafrom would work if not  
+      - name: Log in with AZ CLI (Federated Credentials)
+        uses: azure/login@v1
+        with:
+            client-id: ${{ vars.AZURE_CLIENT_ID }}
+            tenant-id: ${{ vars.AZURE_TENANT_ID }}
+            subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       # Init terraform
       - name: Terraform Init
