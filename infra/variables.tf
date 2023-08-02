@@ -15,7 +15,17 @@ variable "principal_id" {
   type        = string
 }
 
-variable "service_name" {
-  description = "The name of service to be deployed. Used to contruct Azure resource names"
+variable "product_name" {
+  description = "The name of the product"
+  type        = string
+}
+
+variable "product_prefix" {
+  description = "The prefix appended to all resources used to identify the product"
+  type        = string
+}
+
+variable "product_service_name" {
+  description = "The name of product service to be deployed. Used to construct Azure resource names"
   type        = string
 }

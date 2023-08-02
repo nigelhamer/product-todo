@@ -1,0 +1,121 @@
+# This is a basic workflow to help you get started with Actions
+name: "terraform push workflow"
+
+on:
+  # Show manual 'Run workflow button'
+  workflow_dispatch:
+  # Trigger from an API dispatch call of type 'terraform_apply'
+  repository_dispatch:
+    types: [terraform_apply]
+  # Trigger the workflow on push events but NOT for the main branch
+  push:
+    branches-ignore:
+      - 'main'
+
+defaults:
+  run:
+    working-directory: ./infra
+
+jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    environment: DEV
+    container:
+        image: mcr.microsoft.com/azure-dev-cli-apps:latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./infra/
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Load the right AZD env configuration
+      - name: AZD env configuration
+        run:
+            if [ ${{ github.ref }} == 'refs/heads/infra/*' ]; then
+                azd env select infra
+            else
+                azd env select ${{ vars.AZURE_ENV_NAME }}
+            fi
+            source ../.azure/$AZURE_ENV_NAME/.env
+            echo $RS_STORAGE_ACCOUNT
+    
+      # Check the fomatting of .tf. files
+      - name: Terraform Format
+        id: tf-fmt
+        working-directory: ./infra
+        run: terraform fmt -check
+
+      # Init terraform
+      - name: Terraform Init
+        id: tf-init
+        working-directory: ./infra
+        run: terraform init
+                -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" \
+                -backend-config="container_name=$RS_CONTAINER_NAME" \
+                -backend-config="key=${SERVICE_NAME}/${AZURE_ENV_NAME}.tfstate" \
+                -backend-config="resource_group_name=$RS_RESOURCE_GROUP" \
+                -backend-config="subscription_id=$AZURE_SUBSCRIPTION_ID" \
+                -backend-config="tenant_id=$AZURE_TENANT_ID" \
+                -backend-config="use_oidc=true" 
+
+      # Validate terraform files syntax
+      - name: Terraform Validate
+        id: tf-validate
+        working-directory: ./infra
+        run: terraform validate
+
+      # Truncate TF plan
+      - name: Truncate Terraform Plan result
+        run: |
+          plan=$(cat <<EOF > $GITHUB_ENV
+          ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          EOF)
+          echo "${plan}" | grep -v 'Refreshing state' >> $GITHUB_ENV
+
+      # Run terraform plan and output for checking/validation
+      - name: Terraform Plan
+        id: tf-plan
+        working-directory: ./infra
+        run: 
+            terraform plan \
+                -var="environment_name=$AZURE_ENV_NAME" \
+                -var="location=$AZURE_LOCATION" \
+                -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
+                -var="product_name=$PRODUCT_NAME" \
+                -var="product_prefix=$PRODUCT_PREFIX" \
+                -var="product_service_name=$PRODUCT_SERVICE_NAME" 
+        continue-on-error: true
+
+      - uses: actions/github-script@v6
+        env:
+          PLAN: "terraform\n${{ steps.tf-plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.tf-fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.tf-init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.tf-validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+      # If the plan failed for any reason exit the workflow
+      - name: Terraform Plan Status
+        id: tf-plan-status
+        if: steps.tf-plan.outcome == 'failure'
+        run: exit 1

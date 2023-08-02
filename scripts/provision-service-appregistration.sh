@@ -22,7 +22,7 @@ az account set --subscription $AZURE_SUBSCRIPTION_ID
 ##################################################################################################
 
 # Global Variables
-export REPO="$PRODUCT_NAME-$SERVICE_NAME"
+export REPO="$PRODUCT_NAME-$PRODUCT_SERVICE_NAME"
 export APP_NAME="$REPO-service-app"
 
 # Create the App Registration and service principle

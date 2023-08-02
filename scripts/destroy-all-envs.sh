@@ -1,6 +1,6 @@
-#!/bin/bash
-# remember to run chmod +x ./terraform-plan.sh
-# to run: ./terraform-plan.sh
+ #!/bin/bash
+# remember to run chmod +x destroy-all-envs.sh
+# to run: ./destroy-all-envs.sh
 # Set to infra by default. Switch to dev if required.
 export AZURE_ENV_NAME=infra
 
@@ -17,26 +17,23 @@ az account set --subscription $AZURE_SUBSCRIPTION_ID
 
 ##################################################################################################
 # 
-# Run Terraform Plan
+# Create App Registration for this Service
 # 
 ##################################################################################################
 
-echo "AZURE_ENV_NAME:$AZURE_ENV_NAME"
-echo "RS_CONTAINER_NAME:$RS_CONTAINER_NAME"
+# Assume Resource Group names will follow the patterns - rg-$PRODUCT_PREFIX-$PRODUCT_SERVICE_NAME-$AZURE_ENV_NAME
 
-cd ../infra
+# Delete the resource group associate with each AZD env found
+for dir in ../.azure/*/    # list directories in the form "/tmp/dirname/"
+do
+    dir=${dir%*/}               # remove the trailing "/"
+    export env="${dir##*/}"     # everything after the final "/"
+
+    resourceGroupName="rg-$PRODUCT_PREFIX-$PRODUCT_SERVICE_NAME-$env"
     
-terraform fmt
-terraform validate
+    echo "Deleting resource group: $resourceGroupName"
+    az group delete --name $resourceGroupName
+done
 
-# Pass the values for the variables terraform needs
-# Needs to align with /infra/main.tfvars.json
-terraform plan \
-    -var="environment_name=$AZURE_ENV_NAME" \
-    -var="location=$AZURE_LOCATION" \
-    -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
-    -var="product_name=$PRODUCT_NAME" \
-    -var="product_prefix=$PRODUCT_PREFIX" \
-    -var="product_service_name=$PRODUCT_SERVICE_NAME" 
 
-    # uuid is random but valid. Only here so validate execute with an error
+
