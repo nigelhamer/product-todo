@@ -135,7 +135,7 @@ jobs:
     # Post Terraform Plan output to Pull Request as a comment
       - name: Comment PR with Terraform Plan
         if: github.event_name == 'pull_request'
-        uses: github-script@v5
+        uses: actions/github-script@v6
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
             script: |
