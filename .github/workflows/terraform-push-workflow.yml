@@ -23,7 +23,7 @@ defaults:
     working-directory: ./infra
 
 jobs:
-  terraform-validate:
+  terraform-plan:
     runs-on: ubuntu-latest
     environment: DEV
     container:
@@ -104,7 +104,7 @@ jobs:
         working-directory: ./infra
         run: |
             terraform plan \
-                -out=tfplan.out
+                -out=tfplan.out \
                 -var="environment_name=${{env.AZURE_ENV_NAME}}" \
                 -var="location=${{env.AZURE_LOCATION}}" \
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
