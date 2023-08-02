@@ -11,6 +11,10 @@ on:
   push:
     branches-ignore:
       - 'main'
+      
+permissions:
+        id-token: write
+        contents: read
 
 defaults:
   run:

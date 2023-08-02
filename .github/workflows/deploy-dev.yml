@@ -9,8 +9,7 @@ on:
   push:
     branches-ignore: 
         - '**'
-
-# https://bishenderson.atlassian.net/wiki/spaces/MFS/pages/4718644/Deployment+Security
+        
 permissions:
   id-token: write
   contents: read
