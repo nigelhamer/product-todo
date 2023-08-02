@@ -5,14 +5,17 @@ on:
   # Show manual 'Run workflow button'
   workflow_dispatch:
 
-  # Trigger the workflow on pushes to branches that start infra/*
+  # Run this on all branches other than main. The PR 
   push:
-    branches:
-      - infra/*
+    branches-ignore:
+      - infra/* 
 
-  # Run when a PR is being worked on  
+  # Run when a PR is being worked on
+  # Ignore infra/* as this would have already been run on a push  
   pull_request:
     types: [opened, synchronize] 
+    branches-ignore:
+      - infra/* 
       
 permissions:
         id-token: write
@@ -110,7 +113,7 @@ jobs:
                 -var="product_name=${{env.PRODUCT_NAME}}" \
                 -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
                 -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
-                detailed-exitcode > tfplan.out 2>&1
+                -detailed-exitcode > tfplan.out 2>&1
         continue-on-error: true
 
       - uses: actions/github-script@v6
