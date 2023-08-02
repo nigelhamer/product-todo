@@ -38,11 +38,12 @@ jobs:
       # Load the right AZD env configuration
       - name: AZD env configuration
         run: |
-            azd env select infra
-            while read -r line; do
-                export "$line"
-            done < ./.azure/infra/.env
-            echo ${RS_STORAGE_ACCOUNT}
+          envFile="${GITHUB_WORKSPACE}/.azure/infra/.env"
+          azd env select infra
+          while read -r line; do
+            export "$line"
+          done < envFile
+          echo ${RS_STORAGE_ACCOUNT}
           
       # Check the fomatting of .tf. files
       - name: Terraform Format
