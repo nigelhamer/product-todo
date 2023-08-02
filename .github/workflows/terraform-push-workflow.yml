@@ -126,15 +126,23 @@ jobs:
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
             script: |
+                const fs = require("fs");
+                const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+
+                const output = `### Output
                 #### Terraform Format and Style 🖌\`${{ steps.tf-fmt.outcome }}\`
                 #### Terraform Initialization ⚙️\`${{ steps.tf-init.outcome }}\`
                 #### Terraform Validation 🤖\`${{ steps.tf-validate.outcome }}\`
                 #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
 
-                const fs = require("fs");
-                const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+                <details><summary>Show Plan</summary>
+                \`\`\`\n
+                ${plan}
+                \`\`\`
+                </details>
+                *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;   
                 
-                ${plans}
+                core.setOutput('my_output', output);
 
       # If the plan failed for any reason exit the workflow
       - name: Terraform Plan Status
