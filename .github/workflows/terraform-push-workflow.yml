@@ -112,8 +112,7 @@ jobs:
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
                 -var="product_name=${{env.PRODUCT_NAME}}" \
                 -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
-                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
-                > tfplan.out 2>&1
+                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" 
         continue-on-error: true
 
       - uses: actions/github-script@v6
@@ -130,6 +129,8 @@ jobs:
             <details><summary>Show Plan</summary>
     
             ${{env.PLAN}}
+
+            ${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}
 
             </details>
 
