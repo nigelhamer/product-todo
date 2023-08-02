@@ -112,46 +112,30 @@ jobs:
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
                 -var="product_name=${{env.PRODUCT_NAME}}" \
                 -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
-                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" 
+                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
+                -input=false -no-color -out tf.plan
         continue-on-error: true
 
-      - uses: actions/github-script@v6
-        env:
-          PLAN: "terraform\n${{ steps.tf-plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.tf-fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.tf-init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.tf-validate.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
+      - name: Terraform Show
+        id: show
+        working-directory: ./infra
+        run: terraform show -no-color tf.plan 2>&1 > /tmp/plan.txt
 
-            <details><summary>Show Plan</summary>
-    
-            ${{env.PLAN}}
-
-            ${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-
-    # Post Terraform Plan output to Pull Request as a comment
-      - name: Comment PR with Terraform Plan
-        if: github.event_name == 'pull_request'
+      - name: Terraform Results
         uses: actions/github-script@v6
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
             script: |
-                const fs = require('fs');
-                const data = fs.readFileSync('tfplan.out', 'utf8');
-                github.issues.createComment({
-                    issue_number: context.issue.number,
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    body: '```hcl\n' + data + '\n```',
-                })
-      
+                #### Terraform Format and Style 🖌\`${{ steps.tf-fmt.outcome }}\`
+                #### Terraform Initialization ⚙️\`${{ steps.tf-init.outcome }}\`
+                #### Terraform Validation 🤖\`${{ steps.tf-validate.outcome }}\`
+                #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
+
+                const fs = require("fs");
+                const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+                
+                ${plans}
+
       # If the plan failed for any reason exit the workflow
       - name: Terraform Plan Status
         id: tf-plan-status
