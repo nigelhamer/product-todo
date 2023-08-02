@@ -9,7 +9,7 @@ on:
   push:
     branches-ignore: 
         - '**'
-        
+
 permissions:
   id-token: write
   contents: read
@@ -81,14 +81,12 @@ jobs:
       #       --tenant-id "$($info.tenantId)"
       #   shell: pwsh
 
-      - name: AZD - Switch Env if in the Infra branch
-        run: |         
-          if [ ${{ github.ref }} == 'refs/heads/infra/*' ]; then
-            azd env select infra
-          else
-            azd env select ${{ vars.AZURE_ENV_NAME }}
-          fi
-        shell: bash
+      - name: AZD - Switch Env to relevant branch
+        run: azd env select ${{ vars.AZURE_ENV_NAME }}
+
+      - name: AZD - Switch Env to infra branch if work on a infra/ branch
+        if: startsWith(github.ref, 'refs/heads/infra/')
+        run: azd env select infra
           
       - name: AZD - Set Configuration
         run: |         
