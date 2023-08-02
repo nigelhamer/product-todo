@@ -113,7 +113,7 @@ jobs:
                 -var="product_name=${{env.PRODUCT_NAME}}" \
                 -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
                 -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
-                -detailed-exitcode > tfplan.out 2>&1
+                > tfplan.out 2>&1
         continue-on-error: true
 
       - uses: actions/github-script@v6
