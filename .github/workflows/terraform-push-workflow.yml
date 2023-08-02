@@ -39,7 +39,7 @@ jobs:
       - name: AZD env configuration
         run:
             azd env select infra
-            source ../.azure/infra/.env
+            source .azure/infra/.env
             echo ${RS_STORAGE_ACCOUNT}
     
           
