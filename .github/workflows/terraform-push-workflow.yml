@@ -73,7 +73,8 @@ jobs:
         id: tf-init
         working-directory: ./infra
         run: |
-              echo ${RS_STORAGE_ACCOUNT}
+              echo ${$AZURE_TENANT_ID}
+              echo ${$ARM_TENANT_ID}
               terraform init \
                 -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" \
                 -backend-config="container_name=$RS_CONTAINER_NAME" \
