@@ -39,6 +39,9 @@ jobs:
       - name: AZD env configuration
         run:
             azd env select infra
+            source ../.azure/infra/.env
+            echo ${RS_STORAGE_ACCOUNT}
+    
           
       # Check the fomatting of .tf. files
       - name: Terraform Format
@@ -50,7 +53,9 @@ jobs:
       - name: Terraform Init
         id: tf-init
         working-directory: ./infra
-        run: terraform init
+        run: 
+              echo ${RS_STORAGE_ACCOUNT}
+              terraform init
                 -backend-config="storage_account_name=$RS_STORAGE_ACCOUNT" \
                 -backend-config="container_name=$RS_CONTAINER_NAME" \
                 -backend-config="key=${SERVICE_NAME}/${AZURE_ENV_NAME}.tfstate" \
