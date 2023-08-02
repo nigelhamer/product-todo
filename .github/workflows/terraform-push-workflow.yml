@@ -49,7 +49,7 @@ jobs:
       # Load the right AZD env configuration
       - name: AZD env configuration
         run: |
-          azd env select infra
+          azd env select dev
           azd env get-values --no-prompt >> $GITHUB_ENV
           echo ${RS_STORAGE_ACCOUNT}
           
@@ -59,7 +59,7 @@ jobs:
         working-directory: ./infra
         run: terraform fmt -check
 
-      # Log into Azure - Terrafrom would work if not  
+      # Log into Azure - Terraform would work if not  
       - name: Log in with AZ CLI (Federated Credentials)
         uses: azure/login@v1
         with:
@@ -108,7 +108,7 @@ jobs:
         if: steps.tf-plan.outcome == 'failure'
         run: exit 1
     
-      # Save the terrafrom output to a file so it can be used later
+      # Save the Terraform output to a file so it can be used later
       - name: Terraform Show
         id: show
         working-directory: ./infra
