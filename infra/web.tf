@@ -9,10 +9,10 @@ resource "azurecaf_name" "staticapp_name" {
 }
 resource "azurerm_static_site" "staticapp" {
   name                = azurecaf_name.staticapp_name.result
-  location            = azurerm_resource_group.rg.location
+  location            = "westeurope"
   resource_group_name = azurerm_resource_group.rg.name
   sku_size            = "Free"
-  
+
   # Mark as web. Required for AZD to know where to deploy
-  tags               = merge(local.tags, { azd-service-name : "web" })
+  tags = merge(local.tags, { azd-service-name : "web" })
 }

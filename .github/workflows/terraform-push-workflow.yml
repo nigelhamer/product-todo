@@ -1,0 +1,152 @@
+# This is a basic workflow to help you get started with Actions
+name: "Terraform plan"
+
+on:
+  # Show manual 'Run workflow button'
+  workflow_dispatch:
+
+  # Run when a PR is being worked on
+  # Ignore infra/* as this would have already been run on a push  
+  pull_request:
+    types: [opened, synchronize] 
+   
+permissions:
+        id-token: write
+        contents: read
+        pull-requests: write
+
+defaults:
+  run:
+    working-directory: ./infra
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    environment: DEV
+    container:
+        image: mcr.microsoft.com/azure-dev-cli-apps:latest
+    env:
+      # Terraform Environment variables
+      #TF_LOG: INFO
+
+      # Required for terraform to pick up service principle auth
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./infra/
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Load the right AZD env configuration
+      - name: AZD env configuration
+        run: |
+          azd env select dev
+          azd env get-values --no-prompt >> $GITHUB_ENV
+          echo ${RS_STORAGE_ACCOUNT}
+          
+      # Check the fomatting of .tf. files
+      - name: Terraform Format
+        id: tf-fmt
+        working-directory: ./infra
+        run: terraform fmt -check
+
+      # Log into Azure - Terraform would work if not  
+      - name: Log in with AZ CLI (Federated Credentials)
+        uses: azure/login@v1
+        with:
+            client-id: ${{ vars.AZURE_CLIENT_ID }}
+            tenant-id: ${{ vars.AZURE_TENANT_ID }}
+            subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Init terraform
+      - name: Terraform Init
+        id: tf-init
+        working-directory: ./infra
+        run: |
+              terraform init \
+                -backend-config="storage_account_name=${{env.RS_STORAGE_ACCOUNT}}" \
+                -backend-config="container_name=${{env.RS_CONTAINER_NAME}}" \
+                -backend-config="key=${{env.PRODUCT_SERVICE_NAME}}/${{env.AZURE_ENV_NAME}}.tfstate" \
+                -backend-config="resource_group_name=${{env.RS_RESOURCE_GROUP}}" \
+                -backend-config="subscription_id=${{env.AZURE_SUBSCRIPTION_ID}}" \
+                -backend-config="tenant_id=${{env.AZURE_TENANT_ID}}" \
+                -backend-config="use_oidc=true" 
+
+      # Validate terraform files syntax
+      - name: Terraform Validate
+        id: tf-validate
+        working-directory: ./infra
+        run: terraform validate
+
+      # Run terraform plan and output for checking/validation
+      - name: Terraform Plan
+        id: tf-plan
+        working-directory: ./infra
+        run: |
+            terraform plan \
+                -var="environment_name=${{env.AZURE_ENV_NAME}}" \
+                -var="location=${{env.AZURE_LOCATION}}" \
+                -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
+                -var="product_name=${{env.PRODUCT_NAME}}" \
+                -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
+                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
+                -input=false -no-color -out tf.plan
+        continue-on-error: true
+
+      # If the plan failed for any reason exit the workflow
+      - name: Terraform Plan Status
+        id: tf-plan-status
+        if: steps.tf-plan.outcome == 'failure'
+        run: exit 1
+    
+      # Save the Terraform output to a file so it can be used later
+      - name: Terraform Show
+        id: show
+        working-directory: ./infra
+        run: terraform show -no-color tf.plan 2>&1 > /tmp/plan.txt
+
+      # Update the PR
+      - name: Add Terraform Results to PR
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        id: set_output
+        with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+                const fs = require("fs");
+                const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+
+                const output = `### Output
+                #### Terraform Format and Style 🖌\`${{ steps.tf-fmt.outcome }}\`
+                #### Terraform Initialization ⚙️\`${{ steps.tf-init.outcome }}\`
+                #### Terraform Validation 🤖\`${{ steps.tf-validate.outcome }}\`
+                #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
+
+                <details><summary>Show Plan</summary>
+
+                \`\`\`Terraform
+                ${plan}
+                \`\`\`
+
+                </details>
+
+                *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;   
+
+                await github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: output
+                })
+                
+
+

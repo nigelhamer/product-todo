@@ -53,17 +53,17 @@ resource "azurerm_linux_function_app" "functionapp" {
   service_plan_id            = azurerm_service_plan.appserviceplan.id
   storage_account_name       = azurerm_storage_account.functionapp_storage.name
   storage_account_access_key = azurerm_storage_account.functionapp_storage.primary_access_key
-  
+
 
   # Mark as api. Required for AZD to know where to deploy
-  tags               = merge(local.tags, { azd-service-name : "api" })
+  tags = merge(local.tags, { azd-service-name : "api" })
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME"          = "dotnet"
-    "FUNCTIONS_EXTENSION_VERSION"       = "~4"
-    "APPINSIGHTS_INSTRUMENTATIONKEY"    = azurerm_application_insights.appinsights.instrumentation_key,
-    "AzureAd__ClientId"                 = azurerm_user_assigned_identity.applicationIdentity.client_id,
-    "StorageContainerName"              = "application",
+    "FUNCTIONS_WORKER_RUNTIME"       = "dotnet"
+    "FUNCTIONS_EXTENSION_VERSION"    = "~4"
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.appinsights.instrumentation_key,
+    "AzureAd__ClientId"              = azurerm_user_assigned_identity.applicationIdentity.client_id,
+    "StorageContainerName"           = "application",
   }
   site_config {}
   identity {
