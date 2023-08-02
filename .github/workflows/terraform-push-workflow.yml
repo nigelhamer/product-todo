@@ -94,7 +94,7 @@ jobs:
       - name: Truncate Terraform Plan result
         run: |
           plan=$(cat <<EOF > $GITHUB_ENV
-          ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          ${{ format('{0}{1}', steps.tf-plan.outputs.stdout, steps.tf-plan.outputs.stderr) }}
           EOF)
           echo "${plan}" | grep -v 'Refreshing state' >> $GITHUB_ENV
 
