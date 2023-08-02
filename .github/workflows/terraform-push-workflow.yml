@@ -5,17 +5,10 @@ on:
   # Show manual 'Run workflow button'
   workflow_dispatch:
 
-  # Run this on this when push infra branches
-  push:
-    branches:
-      - infra/* 
-
   # Run when a PR is being worked on
   # Ignore infra/* as this would have already been run on a push  
   pull_request:
     types: [opened, synchronize] 
-    branches-ignore:
-      - infra/* 
    
 permissions:
         id-token: write
@@ -93,14 +86,6 @@ jobs:
         working-directory: ./infra
         run: terraform validate
 
-    #   # Truncate TF plan
-    #   - name: Truncate Terraform Plan result
-    #     run: |
-    #       plan=$(cat <<EOF > $GITHUB_ENV
-    #       ${{ format('{0}{1}', steps.tf-plan.outputs.stdout, steps.tf-plan.outputs.stderr) }}
-    #       EOF)
-    #       echo "${plan}" | grep -v 'Refreshing state' >> $GITHUB_ENV
-
       # Run terraform plan and output for checking/validation
       - name: Terraform Plan
         id: tf-plan
@@ -116,13 +101,22 @@ jobs:
                 -input=false -no-color -out tf.plan
         continue-on-error: true
 
+      # If the plan failed for any reason exit the workflow
+      - name: Terraform Plan Status
+        id: tf-plan-status
+        if: steps.tf-plan.outcome == 'failure'
+        run: exit 1
+    
+      # Save the terrafrom output to a file so it can be used later
       - name: Terraform Show
         id: show
         working-directory: ./infra
         run: terraform show -no-color tf.plan 2>&1 > /tmp/plan.txt
 
-      - name: Terraform Results
+      # Update the PR
+      - name: Add Terraform Results to PR
         uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
         id: set_output
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -142,18 +136,13 @@ jobs:
                 \`\`\`
                 </details>
                 *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;   
+
+                await github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: output
+                })
                 
-                core.setOutput('my_output', output);
-        env:
-            MY_ENV_VARIABLE: ${{ steps.set_output.outputs.my_output }}
 
-      # Use the output in other steps
-      - name: Use Constant Output
-        run: |
-            cat /tmp/plan.txt
 
-      # If the plan failed for any reason exit the workflow
-      - name: Terraform Plan Status
-        id: tf-plan-status
-        if: steps.tf-plan.outcome == 'failure'
-        run: exit 1
