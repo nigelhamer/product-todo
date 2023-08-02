@@ -90,13 +90,13 @@ jobs:
         working-directory: ./infra
         run: terraform validate
 
-      # Truncate TF plan
-      - name: Truncate Terraform Plan result
-        run: |
-          plan=$(cat <<EOF > $GITHUB_ENV
-          ${{ format('{0}{1}', steps.tf-plan.outputs.stdout, steps.tf-plan.outputs.stderr) }}
-          EOF)
-          echo "${plan}" | grep -v 'Refreshing state' >> $GITHUB_ENV
+    #   # Truncate TF plan
+    #   - name: Truncate Terraform Plan result
+    #     run: |
+    #       plan=$(cat <<EOF > $GITHUB_ENV
+    #       ${{ format('{0}{1}', steps.tf-plan.outputs.stdout, steps.tf-plan.outputs.stderr) }}
+    #       EOF)
+    #       echo "${plan}" | grep -v 'Refreshing state' >> $GITHUB_ENV
 
       # Run terraform plan and output for checking/validation
       - name: Terraform Plan
@@ -104,13 +104,13 @@ jobs:
         working-directory: ./infra
         run: |
             terraform plan \
-                -out=tfplan.out \
                 -var="environment_name=${{env.AZURE_ENV_NAME}}" \
                 -var="location=${{env.AZURE_LOCATION}}" \
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
                 -var="product_name=${{env.PRODUCT_NAME}}" \
                 -var="product_prefix=${{env.PRODUCT_PREFIX}}" \
-                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" 
+                -var="product_service_name=${{env.PRODUCT_SERVICE_NAME}}" \
+                detailed-exitcode > tfplan.out 2>&1
         continue-on-error: true
 
       - uses: actions/github-script@v6
