@@ -5,9 +5,9 @@ on:
   # Show manual 'Run workflow button'
   workflow_dispatch:
 
-  # Run this on all branches other than main. The PR 
+  # Run this on this when push infra branches
   push:
-    branches-ignore:
+    branches:
       - infra/* 
 
   # Run when a PR is being worked on
@@ -123,6 +123,7 @@ jobs:
 
       - name: Terraform Results
         uses: actions/github-script@v6
+        id: set_output
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
             script: |
@@ -143,6 +144,12 @@ jobs:
                 *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;   
                 
                 core.setOutput('my_output', output);
+        env:
+            MY_ENV_VARIABLE: ${{ steps.set_output.outputs.my_output }}
+
+      # Use the output in other steps
+      - name: Use Constant Output
+        run: echo "The constant value is: $MY_ENV_VARIABLE"
 
       # If the plan failed for any reason exit the workflow
       - name: Terraform Plan Status
