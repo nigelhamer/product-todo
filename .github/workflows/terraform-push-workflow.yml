@@ -1,16 +1,18 @@
 # This is a basic workflow to help you get started with Actions
-name: "terraform push workflow"
+name: "Terraform plan"
 
 on:
   # Show manual 'Run workflow button'
   workflow_dispatch:
-  # Trigger from an API dispatch call of type 'terraform_apply'
-  repository_dispatch:
-    types: [terraform_apply]
-  # Trigger the workflow on push events but NOT for the main branch
+
+  # Trigger the workflow on pushes to branches that start infra/*
   push:
-    branches-ignore:
-      - 'main'
+    branches:
+      - infra/*
+
+  # Run when a PR is being worked on  
+  pull_request:
+    types: [opened, synchronize] 
       
 permissions:
         id-token: write
@@ -102,6 +104,7 @@ jobs:
         working-directory: ./infra
         run: |
             terraform plan \
+                -out=tfplan.out
                 -var="environment_name=${{env.AZURE_ENV_NAME}}" \
                 -var="location=${{env.AZURE_LOCATION}}" \
                 -var="principal_id=550e8400-e29b-41d4-a716-446655440000" \
@@ -122,15 +125,29 @@ jobs:
             #### Terraform Plan 📖\`${{ steps.tf-plan.outcome }}\`
 
             <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
+    
+            ${{env.PLAN}}
 
             </details>
 
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
 
+    # Post Terraform Plan output to Pull Request as a comment
+      - name: Comment PR with Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: github-script@v5
+        with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+                const fs = require('fs');
+                const data = fs.readFileSync('tfplan.out', 'utf8');
+                github.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: '```hcl\n' + data + '\n```',
+                })
+      
       # If the plan failed for any reason exit the workflow
       - name: Terraform Plan Status
         id: tf-plan-status

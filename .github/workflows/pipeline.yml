@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+      - infra/*
+
 permissions:
   id-token: write
   contents: read
@@ -19,7 +21,7 @@ jobs:
   use-deploy-dev:
     # only run the 'deploy' job if the 'use-build' job passes
     # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idneeds
-    needs: use-build
+    needs: use-build 
     uses: ./.github/workflows/deploy-dev.yml
     
 #   use-deploy-test:
