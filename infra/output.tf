@@ -28,7 +28,7 @@ output "AZURE_KEY_VAULT_NAME" {
 }
 
 output "REACT_APP_API_BASE_URL" {
-  value = "https://${azurerm_linux_function_app.functionapp.name}.azurewebsites.net"
+  value = module.api.API_URI
 }
 
 output "REACT_APP_APPLICATIONINSIGHTS_CONNECTION_STRING" {
@@ -36,7 +36,7 @@ output "REACT_APP_APPLICATIONINSIGHTS_CONNECTION_STRING" {
 }
 
 output "REACT_APP_WEB_BASE_URL" {
-  value = "https://${azurerm_static_site.staticapp.default_host_name}"
+  value = module.web.SERVICE_WEB_URI
 }
 
 

@@ -14,10 +14,11 @@ resource "azurerm_mssql_server" "sqlserver" {
   version                      = "12.0"
   administrator_login          = "mradministrator"
   administrator_login_password = "thisIsDog11"
-
 }
+
 resource "azurerm_mssql_database" "db" {
   name      = "todo"
   tags      = local.tags
   server_id = azurerm_mssql_server.sqlserver.id
+  sku_name  = "GP_S_Gen5_2"
 }
