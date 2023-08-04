@@ -15,6 +15,8 @@ module "web" {
   resource_group_name = azurerm_resource_group.rg.name
 
   # Mark as web. Required for AZD to know where to deploy
-  tags = merge(local.tags, { azd-service-name : "web" })
+  # Mark as api. Required for AZD to know where to deploy
+  tags         = local.tags
+  locator-tags = { azd-service-name : "web" }
 }
 

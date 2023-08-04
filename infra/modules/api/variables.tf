@@ -15,6 +15,11 @@ variable "tags" {
   default = {}
 }
 
+variable "locator-tags" {
+  type    = map(string)
+  default = {}
+}
+
 variable "service_plan_name" {
   type = string
 }

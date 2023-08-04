@@ -45,6 +45,7 @@ module "api" {
   azureSqlConnectionStringKey = ""
 
   # Mark as api. Required for AZD to know where to deploy
-  tags = merge(local.tags, { azd-service-name : "api" })
+  tags         = local.tags
+  locator-tags = { azd-service-name : "api" }
 }
 

@@ -17,8 +17,11 @@ resource "azurerm_mssql_server" "sqlserver" {
 }
 
 resource "azurerm_mssql_database" "db" {
-  name      = "todo"
-  tags      = local.tags
-  server_id = azurerm_mssql_server.sqlserver.id
-  sku_name  = "GP_S_Gen5_2"
+  name                        = "todo"
+  tags                        = local.tags
+  server_id                   = azurerm_mssql_server.sqlserver.id
+  sku_name                    = "GP_S_Gen5_1"
+  zone_redundant              = false
+  auto_pause_delay_in_minutes = 60
+  min_capacity                = 0.5
 }
