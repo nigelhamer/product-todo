@@ -20,7 +20,7 @@ resource "azurerm_linux_function_app" "apiapp" {
   name                = var.name
   location            = var.location
   resource_group_name = var.resource_group_name
-  tags                = var.tags
+  tags                = merge(var.tags, var.locator-tags)
 
   service_plan_id            = azurerm_service_plan.apiapp_serviceplan.id
   storage_account_name       = azurerm_storage_account.apiapp_storage.name
