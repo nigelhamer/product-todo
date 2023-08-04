@@ -1,5 +1,5 @@
 output "API_IDENTITY_PRINCIPAL_ID" {
-  value = azurerm_linux_function_app.apiapp.identity
+  value = azurerm_user_assigned_identity.applicationIdentity.principal_id
 }
 
 output "API_NAME" {

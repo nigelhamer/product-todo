@@ -6,22 +6,14 @@ resource "azurecaf_name" "sqlserver_name" {
   random_length = 0
   clean_input   = true
 }
-resource "azurerm_mssql_server" "sqlserver" {
-  name                         = azurecaf_name.sqlserver_name.result
-  location                     = azurerm_resource_group.rg.location
-  resource_group_name          = azurerm_resource_group.rg.name
-  tags                         = local.tags
-  version                      = "12.0"
-  administrator_login          = "mradministrator"
-  administrator_login_password = "thisIsDog11"
-}
 
-resource "azurerm_mssql_database" "db" {
-  name                        = "todo"
-  tags                        = local.tags
-  server_id                   = azurerm_mssql_server.sqlserver.id
-  sku_name                    = "GP_S_Gen5_1"
-  zone_redundant              = false
-  auto_pause_delay_in_minutes = 60
-  min_capacity                = 0.5
+module "db" {
+  source = "./modules/db"
+
+  name                = azurecaf_name.sqlserver_name.result
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  database_name       = "todo"
+
+  tags = local.tags
 }

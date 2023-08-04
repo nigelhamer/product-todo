@@ -13,13 +13,14 @@ resource "azurerm_key_vault" "vault" {
   tags                = local.tags
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
+}
 
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = var.principal_id
-    key_permissions = [
-      "Get",
-      "List",
-    ]
-  }
+resource "azurerm_key_vault_access_policy" "api-prinicpal-access" {
+  key_vault_id = azurerm_key_vault.vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = module.api.API_IDENTITY_PRINCIPAL_ID
+
+  key_permissions = [
+    "Get", "List"
+  ]
 }
