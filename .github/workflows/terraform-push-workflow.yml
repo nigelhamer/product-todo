@@ -1,4 +1,3 @@
-# This is a basic workflow to help you get started with Actions
 name: "Terraform plan"
 
 on:
@@ -6,7 +5,6 @@ on:
   workflow_dispatch:
 
   # Run when a PR is being worked on
-  # Ignore infra/* as this would have already been run on a push  
   pull_request:
     types: [opened, synchronize] 
    
@@ -51,7 +49,6 @@ jobs:
         run: |
           azd env select dev
           azd env get-values --no-prompt >> $GITHUB_ENV
-          echo ${RS_STORAGE_ACCOUNT}
           
       # Check the fomatting of .tf. files
       - name: Terraform Format
@@ -88,6 +85,8 @@ jobs:
         run: terraform validate
 
       # Run terraform plan and output for checking/validation
+      # This needs to be kept up to date as the terraform is changed to accept more parameters
+      # principal_id=550e8400-e29b-41d4-a716-446655440000 is a hardcoded random value in order for plan to execute successfully
       - name: Terraform Plan
         id: tf-plan
         working-directory: ./infra
