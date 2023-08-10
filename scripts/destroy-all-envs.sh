@@ -17,7 +17,7 @@ az account set --subscription $AZURE_SUBSCRIPTION_ID
 
 ##################################################################################################
 # 
-# Create App Registration for this Service
+# Loop through resource groups deleting them
 # 
 ##################################################################################################
 
