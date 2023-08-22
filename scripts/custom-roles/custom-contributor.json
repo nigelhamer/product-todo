@@ -1,0 +1,20 @@
+{
+    "Name": "Custom Contributor",
+    "IsCustom": true,
+    "Description": "Grants full access to manage all resources, but does not allow you to assign roles in Azure RBAC, manage assignments in Azure Blueprints, or share image galleries.",
+    "Actions": [
+        "*"
+    ],
+    "NotActions": [
+        "Microsoft.Authorization/*/Delete",
+        "Microsoft.Authorization/elevateAccess/Action",
+        "Microsoft.Blueprint/blueprintAssignments/write",
+        "Microsoft.Blueprint/blueprintAssignments/delete",
+        "Microsoft.Compute/galleries/share/action",
+        "Microsoft.Purview/consents/write",
+        "Microsoft.Purview/consents/delete"
+    ],
+    "AssignableScopes": [
+        "/subscriptions/8f8d6d66-dc06-459a-b140-3de74e5f2fe5"
+    ]
+}

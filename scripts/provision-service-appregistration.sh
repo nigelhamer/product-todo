@@ -18,6 +18,8 @@ az account set --subscription $AZURE_SUBSCRIPTION_ID
 ##################################################################################################
 # 
 # Create App Registration for this Service
+#
+# NOTE: It can take a few seconds for the role defintion and role assignments to replicate
 # 
 ##################################################################################################
 
@@ -30,17 +32,24 @@ az ad app create --display-name $APP_NAME
 appreg_obj_id=$(az ad app list --display-name $APP_NAME --query [].id --output tsv)
 appreg_app_id=$(az ad app list --display-name $APP_NAME --query [].appId --output tsv)
 
-echo "App Registration"
-echo "appreg_obj_id:$appreg_obj_id appreg_app_id:$appreg_app_id"
+# echo "App Registration"
+# echo "appreg_obj_id:$appreg_obj_id appreg_app_id:$appreg_app_id"
 
 az ad sp create --id $appreg_app_id
 spn_obj_id=$(az ad sp list --display-name $APP_NAME --query [].id  --output tsv)
 
-echo "Service Principle"
-echo "spn_obj_id:$spn_obj_id"
+# echo "Service Principle"
+# echo "spn_obj_id:$spn_obj_id"
+
+# Create custom contributor role defintion
+az role definition create --role-definition "custom-roles/custom-contributor.json"
+role_def_id=$(az role definition list -n "Custom Contributor" --query [].name  --output tsv)
+
+# echo "Role Definition Id "
+# echo "role_def_id:$role_def_id"
 
 # Give the App Registration Contributor access to the suscription
-az role assignment create --role contributor --subscription  $AZURE_SUBSCRIPTION_ID --assignee-object-id  $spn_obj_id --assignee-principal-type ServicePrincipal --scope /subscriptions/$AZURE_SUBSCRIPTION_ID
+az role assignment create --role $role_def_id --subscription  $AZURE_SUBSCRIPTION_ID --assignee-object-id  $spn_obj_id --assignee-principal-type ServicePrincipal --scope /subscriptions/$AZURE_SUBSCRIPTION_ID
 
 # Setup Federated Credential for each environment
 for dir in ../.azure/*/    # list directories in the form "/tmp/dirname/"
@@ -68,3 +77,7 @@ echo "AZURE_TENANT_ID:$AZURE_TENANT_ID"
 echo
 echo "##################################################################################################"
 
+# Cleanup
+#az ad app delete --id $appreg_app_id
+#az role assignment delete --role "Custom Contributor" 
+#az role definition delete -n "Custom Contributor"
